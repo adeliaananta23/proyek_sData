@@ -1,0 +1,165 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <stack>
+#include <queue>
+#include <unordered_map>
+using namespace std;
+
+// Struct untuk data KTP
+struct KTP {
+    string nik;
+    string nama;
+    string alamat;
+    string tanggalLahir;
+};
+
+// Struct untuk data Item
+struct Item {
+    string kodeItem;
+    string tanggalMasuk;
+};
+
+// Struct untuk data Pembeli
+struct Pembeli {
+    string nik;
+    string waktuKedatangan;
+    string kodeItem;
+};
+
+// Fungsi untuk input data KTP
+void inputKTP(KTP &ktp) {
+    cout << "Masukkan NIK: ";
+    cin >> ktp.nik;
+    cout << "Masukkan Nama: ";
+    cin.ignore();
+    getline(cin, ktp.nama);
+    cout << "Masukkan Alamat: ";
+    getline(cin, ktp.alamat);
+    cout << "Masukkan Tanggal Lahir (YYYY-MM-DD): ";
+    cin >> ktp.tanggalLahir;
+}
+
+// Fungsi untuk menyimpan data KTP ke file
+void saveKTPToFile(KTP ktp) {
+    ofstream file("data_ktp.txt", ios::app);
+    file << ktp.nik << "," << ktp.nama << "," << ktp.alamat << "," << ktp.tanggalLahir << endl;
+    file.close();
+}
+
+// Fungsi untuk menampilkan data KTP dari file
+void displayKTPFromFile() {
+    ifstream file("data_ktp.txt");
+    string line;
+    while (getline(file, line)) {
+        cout << line << endl;
+    }
+    file.close();
+}
+
+// Fungsi untuk menampilkan stack barang (LIFO)
+void displayStack(stack<Item> items) {
+    while (!items.empty()) {
+        Item item = items.top();
+        cout << item.kodeItem << " - " << item.tanggalMasuk << endl;
+        items.pop();
+    }
+}
+
+// Fungsi untuk menampilkan queue pembeli (FIFO)
+void displayQueue(queue<Pembeli> pembelis) {
+    while (!pembelis.empty()) {
+        Pembeli pembeli = pembelis.front();
+        cout << "NIK: " << pembeli.nik << ", Waktu Kedatangan: " << pembeli.waktuKedatangan
+             << ", Kode Item: " << pembeli.kodeItem << endl;
+        pembelis.pop();
+    }
+}
+
+int main() {
+    unordered_map<string, KTP> adminData;
+    stack<Item> gudangLIFO;
+    queue<Pembeli> antrianFIFO;
+    
+    int pilihan;
+    string nik;
+
+    do {
+        cout << "\nMenu Program:\n";
+        cout << "1. Admin Sign In\n";
+        cout << "2. Entri Item Barang\n";
+        cout << "3. Catat Pembeli\n";
+        cout << "4. Jual Item Barang\n";
+        cout << "5. Cetak Daftar Barang\n";
+        cout << "6. Keluar\n";
+        cout << "Pilih menu: ";
+        cin >> pilihan;
+
+        switch (pilihan) {
+        case 1: {
+            KTP admin;
+            cout << "Input Data Admin\n";
+            inputKTP(admin);
+            adminData[admin.nik] = admin;
+            saveKTPToFile(admin);
+            cout << "Admin berhasil ditambahkan.\n";
+            break;
+        }
+        case 2: {
+            Item item;
+            cout << "Masukkan Kode Item: ";
+            cin >> item.kodeItem;
+            cout << "Masukkan Tanggal Masuk (YYYY-MM-DD): ";
+            cin >> item.tanggalMasuk;
+            gudangLIFO.push(item);
+            cout << "Item berhasil ditambahkan ke gudang.\n";
+            break;
+        }
+        case 3: {
+            Pembeli pembeli;
+            cout << "Masukkan NIK Pembeli: ";
+            cin >> pembeli.nik;
+            if (adminData.find(pembeli.nik) == adminData.end()) {
+                cout << "NIK tidak ditemukan. Harap registrasi dulu.\n";
+                break;
+            }
+            cout << "Masukkan Waktu Kedatangan (HH:MM): ";
+            cin >> pembeli.waktuKedatangan;
+            cout << "Masukkan Kode Item yang Ingin Dibeli: ";
+            cin >> pembeli.kodeItem;
+            antrianFIFO.push(pembeli);
+            cout << "Pembeli berhasil dicatat.\n";
+            break;
+        }
+        case 4: {
+            if (antrianFIFO.empty() || gudangLIFO.empty()) {
+                cout << "Tidak ada pembeli atau barang tersedia.\n";
+                break;
+            }
+            Pembeli pembeli = antrianFIFO.front();
+            antrianFIFO.pop();
+
+            Item item = gudangLIFO.top();
+            gudangLIFO.pop();
+
+            cout << "Pembeli NIK " << pembeli.nik << " membeli barang " << item.kodeItem << endl;
+            break;
+        }
+        case 5: {
+            cout << "Daftar Barang di Gudang (LIFO):\n";
+            displayStack(gudangLIFO);
+            cout << "\nAntrian Pembeli (FIFO):\n";
+            displayQueue(antrianFIFO);
+            break;
+        }
+        case 6: {
+            cout << "Keluar dari program.\n";
+            break;
+        }
+        default:
+            cout << "Pilihan tidak valid.\n";
+        }
+    } while (pilihan != 6);
+
+    return 0;
+}
